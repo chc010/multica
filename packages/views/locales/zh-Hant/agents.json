@@ -124,7 +124,15 @@
     "archive_dialog_title": "歸檔\"{{name}}\"？",
     "archive_dialog_description": "歸檔後這個智慧體將無法被分配或提及，進行中的執行會被取消。所有歷史會被保留，可以稍後恢復。",
     "archive_dialog_cancel": "取消",
-    "archive_dialog_confirm": "歸檔"
+    "archive_dialog_confirm": "歸檔",
+    "bulk_config": "設定執行設定",
+    "bulk_config_dialog_title": "設定執行設定",
+    "bulk_config_applies_to": "將套用於 {{count}} 個智能體。",
+    "bulk_config_skipped": "{{count}} 個已略過（你無權管理）。",
+    "bulk_config_overwrite_warning": "此操作會覆寫所選智能體現有的執行設定。只有你在下方勾選的項目會被修改，其餘項目保留各自原有設定。",
+    "bulk_config_need_runtime": "請先選擇執行環境。",
+    "bulk_config_confirm": "套用",
+    "bulk_config_partial": "已更新 {{succeeded}} 個；{{failed}} 個失敗（保持目前狀態）。"
   },
   "detail": {
     "back_to_agents": "智慧體",

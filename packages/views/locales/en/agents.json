@@ -133,7 +133,15 @@
     "archive_dialog_title": "Archive \"{{name}}\"?",
     "archive_dialog_description": "The agent won't be assignable or mentionable, and any active runs will be cancelled. All history is preserved and you can restore it later.",
     "archive_dialog_cancel": "Cancel",
-    "archive_dialog_confirm": "Archive"
+    "archive_dialog_confirm": "Archive",
+    "bulk_config": "Set execution config",
+    "bulk_config_dialog_title": "Set execution config",
+    "bulk_config_applies_to": "Applies to {{count}} agents.",
+    "bulk_config_skipped": "{{count}} skipped (you cannot manage them).",
+    "bulk_config_overwrite_warning": "This overwrites the current execution config of every selected agent. Only the fields you enable below are changed; everything else keeps its existing value.",
+    "bulk_config_need_runtime": "Pick a runtime first.",
+    "bulk_config_confirm": "Apply",
+    "bulk_config_partial": "Updated {{succeeded}}; {{failed}} failed (kept in current state)."
   },
   "detail": {
     "back_to_agents": "Agents",

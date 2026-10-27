@@ -96,6 +96,7 @@ function renderToolbar(rows: AgentListRow[]) {
         <AgentBatchToolbar
           rows={nextRows}
           members={[]}
+          runtimes={[]}
           currentUserId="user-1"
           onClear={() => {}}
         />
@@ -128,7 +129,12 @@ describe("AgentBatchToolbar — action order", () => {
       .map((b) => b.textContent?.trim())
       .filter((text): text is string => !!text);
 
-    expect(actions).toEqual(["Restore", "Set access scope", "Archive"]);
+    expect(actions).toEqual([
+      "Restore",
+      "Set access scope",
+      "Set execution config",
+      "Archive",
+    ]);
   });
 });
 
@@ -266,6 +272,132 @@ describe("AgentBatchToolbar — bulk Set access scope", () => {
     expect(
       screen.getByRole("radio", { name: /Entire workspace/ }),
     ).not.toBeChecked();
+    expect(updateAgentSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("AgentBatchToolbar — bulk execution config", () => {
+  const runtimeA = {
+    id: "rt-a",
+    workspace_id: "ws-1",
+    owner_id: "user-1",
+    device_name: "Machine A",
+    name: "Claude",
+    provider: "claude",
+    status: "online" as const,
+    mode: "local" as const,
+    last_seen_at: "2026-01-01T00:00:00Z",
+    created_at: "2026-01-01T00:00:00Z",
+  };
+
+  function renderWithRuntimes(rows: AgentListRow[]) {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    return render(
+      <QueryClientProvider client={qc}>
+        <I18nProvider locale="en" resources={TEST_RESOURCES}>
+          <AgentBatchToolbar
+            rows={rows}
+            members={[]}
+            runtimes={[runtimeA] as never}
+            currentUserId="user-1"
+            onClear={() => {}}
+          />
+        </I18nProvider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("shows the selected count and the overwrite warning before writing", async () => {
+    renderWithRuntimes([
+      makeRow("a", "user-1"),
+      makeRow("b", "user-1"),
+    ]);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set execution config" }),
+    );
+
+    await screen.findByText(/Applies to 2 agents/);
+    expect(
+      screen.getByText(/overwrites the current execution config/i),
+    ).toBeInTheDocument();
+    // Nothing is written until Confirm.
+    expect(updateAgentSpy).not.toHaveBeenCalled();
+  });
+
+  it("reports selected agents the caller cannot manage as skipped", async () => {
+    renderWithRuntimes([
+      makeRow("a", "user-1"),
+      makeRow("b", "user-2"), // canManage false
+    ]);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set execution config" }),
+    );
+
+    await screen.findByText(/Applies to 1 agents/);
+    expect(screen.getByText(/1 skipped/)).toBeInTheDocument();
+  });
+
+  it("keeps Apply disabled until at least one field is enabled", async () => {
+    renderWithRuntimes([makeRow("a", "user-1")]);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set execution config" }),
+    );
+    await screen.findByText(/Applies to 1 agents/);
+
+    expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
+  });
+
+  it("writes only the fields the caller opened, leaving the rest untouched", async () => {
+    renderWithRuntimes([makeRow("a", "user-1"), makeRow("b", "user-1")]);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set execution config" }),
+    );
+    await screen.findByText(/Applies to 2 agents/);
+
+    // Both rows sit on the same runtime, so Model opens without an
+    // overwrite of the runtime itself.
+    fireEvent.click(screen.getByRole("checkbox", { name: "Model" }));
+
+    const apply = screen.getByRole("button", { name: "Apply" });
+    await waitFor(() => expect(apply).toBeEnabled());
+    fireEvent.click(apply);
+
+    await waitFor(() => expect(updateAgentSpy).toHaveBeenCalledTimes(2));
+    for (const call of updateAgentSpy.mock.calls) {
+      // Runtime untouched → no runtime_id, and no orphan native tokens.
+      expect(call[1]).toEqual({ model: "" });
+    }
+  });
+
+  it("discards the draft on cancel and reopens clean", async () => {
+    renderWithRuntimes([makeRow("a", "user-1")]);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set execution config" }),
+    );
+    await screen.findByText(/Applies to 1 agents/);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Model" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Apply" })).not.toBeInTheDocument(),
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set execution config" }),
+    );
+    await screen.findByText(/Applies to 1 agents/);
+    expect(screen.getByRole("checkbox", { name: "Model" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
     expect(updateAgentSpy).not.toHaveBeenCalled();
   });
 });

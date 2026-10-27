@@ -133,7 +133,15 @@
     "archive_dialog_title": "Archiver « {{name}} » ?",
     "archive_dialog_description": "L'agent ne pourra plus être assigné ni mentionné, et ses exécutions actives seront annulées. Tout l'historique sera conservé et vous pourrez le restaurer plus tard.",
     "archive_dialog_cancel": "Annuler",
-    "archive_dialog_confirm": "Archiver"
+    "archive_dialog_confirm": "Archiver",
+    "bulk_config": "Définir la configuration d'exécution",
+    "bulk_config_dialog_title": "Définir la configuration d'exécution",
+    "bulk_config_applies_to": "S'applique à {{count}} agents.",
+    "bulk_config_skipped": "{{count}} ignorés (vous ne pouvez pas les gérer).",
+    "bulk_config_overwrite_warning": "Cette action remplace la configuration d'exécution actuelle de chaque agent sélectionné. Seuls les champs activés ci-dessous sont modifiés ; les autres conservent leur valeur existante.",
+    "bulk_config_need_runtime": "Choisissez d'abord un runtime.",
+    "bulk_config_confirm": "Appliquer",
+    "bulk_config_partial": "{{succeeded}} mis à jour ; {{failed}} en échec (état actuel conservé)."
   },
   "detail": {
     "back_to_agents": "Agents",

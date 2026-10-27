@@ -124,7 +124,15 @@
     "archive_dialog_title": "归档\"{{name}}\"？",
     "archive_dialog_description": "归档后这个智能体将无法被分配或提及，进行中的运行会被取消。所有历史会被保留，可以稍后恢复。",
     "archive_dialog_cancel": "取消",
-    "archive_dialog_confirm": "归档"
+    "archive_dialog_confirm": "归档",
+    "bulk_config": "设置执行配置",
+    "bulk_config_dialog_title": "设置执行配置",
+    "bulk_config_applies_to": "将应用于 {{count}} 个智能体。",
+    "bulk_config_skipped": "{{count}} 个已跳过（你无权管理）。",
+    "bulk_config_overwrite_warning": "此操作会覆盖所选智能体现有的执行配置。只有你在下方勾选的项会被修改，其余项保持各自原有配置。",
+    "bulk_config_need_runtime": "请先选择运行时。",
+    "bulk_config_confirm": "应用",
+    "bulk_config_partial": "已更新 {{succeeded}} 个；{{failed}} 个失败（保持当前状态）。"
   },
   "detail": {
     "back_to_agents": "智能体",

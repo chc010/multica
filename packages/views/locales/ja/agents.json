@@ -116,7 +116,15 @@
     "archive_dialog_title": "\"{{name}}\" をアーカイブしますか？",
     "archive_dialog_description": "このエージェントは割り当てやメンションができなくなり、アクティブな実行はすべてキャンセルされます。履歴はすべて保持され、後で復元できます。",
     "archive_dialog_cancel": "キャンセル",
-    "archive_dialog_confirm": "アーカイブ"
+    "archive_dialog_confirm": "アーカイブ",
+    "bulk_config": "実行構成を設定",
+    "bulk_config_dialog_title": "実行構成を設定",
+    "bulk_config_applies_to": "{{count}} 個のエージェントに適用します。",
+    "bulk_config_skipped": "{{count}} 個をスキップしました（管理権限がありません）。",
+    "bulk_config_overwrite_warning": "選択したエージェントの現在の実行構成を上書きします。下で有効にした項目だけが変更され、それ以外は既存の値が保持されます。",
+    "bulk_config_need_runtime": "先にランタイムを選択してください。",
+    "bulk_config_confirm": "適用",
+    "bulk_config_partial": "{{succeeded}} 個を更新しました。{{failed}} 個は失敗しました（現在の状態を維持）。"
   },
   "detail": {
     "back_to_agents": "エージェント",

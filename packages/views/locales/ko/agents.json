@@ -124,7 +124,15 @@
     "archive_dialog_title": "\"{{name}}\"을(를) 보관할까요?",
     "archive_dialog_description": "이 에이전트는 할당하거나 멘션할 수 없고, 활성 실행은 모두 취소됩니다. 기록은 유지되며 나중에 복원할 수 있습니다.",
     "archive_dialog_cancel": "취소",
-    "archive_dialog_confirm": "보관"
+    "archive_dialog_confirm": "보관",
+    "bulk_config": "실행 구성 설정",
+    "bulk_config_dialog_title": "실행 구성 설정",
+    "bulk_config_applies_to": "{{count}}개의 에이전트에 적용됩니다.",
+    "bulk_config_skipped": "{{count}}개는 건너뜁니다(관리 권한 없음).",
+    "bulk_config_overwrite_warning": "선택한 에이전트의 현재 실행 구성을 덮어씁니다. 아래에서 활성화한 항목만 변경되며, 나머지는 기존 값을 유지합니다.",
+    "bulk_config_need_runtime": "먼저 런타임을 선택하세요.",
+    "bulk_config_confirm": "적용",
+    "bulk_config_partial": "{{succeeded}}개를 업데이트했습니다. {{failed}}개는 실패했습니다(현재 상태 유지)."
   },
   "detail": {
     "back_to_agents": "에이전트",

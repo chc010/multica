@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { MemberWithUser } from "@multica/core/types";
+import type { AgentRuntime, MemberWithUser } from "@multica/core/types";
 import { api } from "@multica/core/api";
 import { useWorkspaceId } from "@multica/core/hooks";
 import { workspaceKeys } from "@multica/core/workspace/queries";
@@ -22,29 +22,39 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@multica/ui/components/ui/dialog";
-import { Archive, ArchiveRestore, Loader2, X } from "lucide-react";
+import { Archive, ArchiveRestore, Loader2, SlidersHorizontal, X } from "lucide-react";
 import { useT } from "../../i18n";
 import { AccessPicker, type AccessChange } from "./inspector/access-picker";
+import {
+  AgentBulkExecutionDialog,
+  type BulkExecutionPatch,
+} from "./agent-bulk-execution-dialog";
 import type { AgentListRow } from "./agents-page";
 
 /**
  * Floating batch-toolbar for the agents list page. Renders archive/restore
- * actions (existing) and a "Set access scope" action (new, MUL-4302 / 2026-07-14)
- * that opens a single confirmation dialog with an embedded AccessPicker.
+ * actions (existing), a "Set access scope" action (MUL-4302 / 2026-07-14) that
+ * opens a single confirmation dialog with an embedded AccessPicker, and a
+ * "Set execution config" action (bulk runtime / model / thinking / speed) that
+ * opens AgentBulkExecutionDialog.
  *
- * The bulk action is gated by `isOwnedByMe` (not `canManage`) to match the
+ * The access action is gated by `isOwnedByMe` (not `canManage`) to match the
  * backend's owner-only write gate for `permission_mode` / `invocation_targets`.
  * Non-owned selected agents are skipped; the skip count is shown in both the
- * dialog summary and the partial-failure toast.
+ * dialog summary and the partial-failure toast. The execution action uses
+ * `canManage` because runtime / model / thinking / speed follow the generic
+ * agent-update gate (owner OR workspace admin), not the owner-only one.
  */
 export function AgentBatchToolbar({
   rows,
   members,
+  runtimes,
   currentUserId,
   onClear,
 }: {
   rows: AgentListRow[];
   members: MemberWithUser[];
+  runtimes: AgentRuntime[];
   currentUserId: string | null;
   onClear: () => void;
 }) {
@@ -54,6 +64,7 @@ export function AgentBatchToolbar({
   const shouldReduceMotion = useReducedMotion() ?? false;
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmAccess, setConfirmAccess] = useState(false);
+  const [confirmExecution, setConfirmExecution] = useState(false);
   const [accessChange, setAccessChange] = useState<AccessChange | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -76,9 +87,19 @@ export function AgentBatchToolbar({
 
   const allManageable = rows.every((r) => r.canManage);
   const ownedRows = rows.filter((r) => r.isOwnedByMe);
+  const manageableRows = rows.filter((r) => r.canManage);
   const anyOwned = ownedRows.length > 0;
+  const anyManageable = manageableRows.length > 0;
   const anyActive = rows.some((r) => !r.agent.archived_at);
   const anyArchived = rows.some((r) => !!r.agent.archived_at);
+  // Runtime shared by every manageable selected agent, or "" when they differ.
+  // Lets the bulk dialog offer model / thinking / speed without forcing a
+  // runtime overwrite just to obtain a model catalog.
+  const sharedRuntimeId = useMemo(() => {
+    const ids = new Set(manageableRows.map((r) => r.agent.runtime_id));
+    if (ids.size !== 1) return "";
+    return [...ids][0] ?? "";
+  }, [manageableRows]);
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: workspaceKeys.agents(wsId) });
@@ -89,6 +110,7 @@ export function AgentBatchToolbar({
     if (rows.length > 0) return;
     setConfirmArchive(false);
     setConfirmAccess(false);
+    setConfirmExecution(false);
     setAccessChange(null);
   }, [rows.length]);
 
@@ -104,6 +126,24 @@ export function AgentBatchToolbar({
     if (summary.failed > 0) {
       toast.error(
         t(($) => $.row_actions.set_access_bulk_partial, {
+          succeeded: summary.succeeded,
+          failed: summary.failed,
+        }),
+      );
+    }
+  };
+
+  // Execution config is runtime/model native, so the patch is built once by the
+  // dialog and replayed verbatim per agent — never recomputed per target, or a
+  // mid-flight list change could split the batch across two different configs.
+  const applyExecutionBulk = async (patch: BulkExecutionPatch) => {
+    const summary = await runBatch(
+      (id) => api.updateAgent(id, patch),
+      manageableRows,
+    );
+    if (summary.failed > 0) {
+      toast.error(
+        t(($) => $.row_actions.bulk_config_partial, {
           succeeded: summary.succeeded,
           failed: summary.failed,
         }),
@@ -212,6 +252,17 @@ export function AgentBatchToolbar({
             onClick={() => setAccessDialogOpen(true)}
           >
             {t(($) => $.row_actions.set_access)}
+          </Button>
+        )}
+        {anyActive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!anyManageable || busy}
+            onClick={() => setConfirmExecution(true)}
+          >
+            <SlidersHorizontal className="mr-1 size-3.5" />
+            {t(($) => $.row_actions.bulk_config)}
           </Button>
         )}
         {/* Archive sits last: it is the destructive action, kept furthest from
@@ -342,6 +393,25 @@ export function AgentBatchToolbar({
           </DialogFooter>
         </DialogContent>
       </Dialog>}
+
+      {/* Bulk execution-config dialog — runtime / model / thinking / speed.
+          Every field is opt-in, so an untouched field keeps each agent's own
+          value; the dialog states the overwrite up front and shows the selected
+          count before anything is written. */}
+      {rows.length > 0 && (
+        <AgentBulkExecutionDialog
+          open={confirmExecution}
+          onOpenChange={setConfirmExecution}
+          agentCount={manageableRows.length}
+          skippedCount={rows.length - manageableRows.length}
+          sharedRuntimeId={sharedRuntimeId}
+          runtimes={runtimes}
+          members={members}
+          currentUserId={currentUserId}
+          busy={busy}
+          onConfirm={applyExecutionBulk}
+        />
+      )}
     </>
   );
 }

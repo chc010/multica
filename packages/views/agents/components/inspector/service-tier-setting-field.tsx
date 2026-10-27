@@ -65,7 +65,7 @@ export function ServiceTierSettingField({
   );
 }
 
-function ServiceTierPicker({
+export function ServiceTierPicker({
   value,
   tiers,
   supportsExplicitStandard,
